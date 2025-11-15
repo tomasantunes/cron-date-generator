@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Cron Date Generator (Croner)</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <!-- Use the correct UMD build from jsDelivr -->
+        <script src="https://cdn.jsdelivr.net/npm/croner@7/dist/croner.umd.min.js"></script>
+    </head>
+    <body class="bg-light p-4">
+        <div class="container">
+            <h1 class="mb-4">Cron Date Generator (Croner)</h1>
+
+            <div class="card p-4 shadow-sm">
+                <div class="mb-3">
+                    <label class="form-label">Enter Cron String</label>
+                    <input id="cronInput" type="text" class="form-control" placeholder="e.g. 0 9 * * *" />
+                </div>
+                <button id="generateBtn" class="btn btn-primary">Generate Dates</button>
+            </div>
+
+            <h3 class="mt-5">Generated Dates</h3>
+            <ul id="dateList" class="list-group"></ul>
+        </div>
+
+        <script>
+            $("#generateBtn").on("click", function () {
+                const cronStr = $("#cronInput").val().trim();
+                const dateList = $("#dateList");
+                dateList.empty();
+
+                if (!cronStr) {
+                    alert("Please enter a cron string.");
+                    return;
+                }
+
+                let dates = [];
+
+                try {
+                    // Use Cron (global) from croner UMD
+                    const job = new Cron(cronStr);
+
+                    const now = new Date();
+                    const year = now.getFullYear();
+                    const start = new Date(year, 0, 1, 0, 0, 0);
+                    const end = new Date(year, 11, 31, 23, 59, 59);
+
+                    // Cron.nextRun(from) returns the next run date
+                    let next = job.nextRun(start);
+
+                    // Limit loop to reasonable number to avoid infinite for very frequent cron
+                    let count = 0;
+                    while (next && next <= end && count < 1000) {
+                        dates.push(new Date(next));
+                        next = job.nextRun(next);
+                        count++;
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert("Invalid cron expression.");
+                    return;
+                }
+
+                if (dates.length === 0) {
+                    dateList.append(`<li class="list-group-item">No matching dates found for this year.</li>`);
+                    return;
+                }
+
+                dates.forEach((d) => {
+                    dateList.append(`<li class="list-group-item">${d.toLocaleString()}</li>`);
+                });
+            });
+        </script>
+
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    </body>
+</html>
